@@ -9,6 +9,7 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
 import seaborn as sns
+import pandas as pd
 
 # Lectura de los datos del problema
 data = np.loadtxt( 'datos/airfoil_self_noise.dat' )
@@ -34,3 +35,7 @@ for i in range(5):
 Pearson = np.corrcoef(train, rowvar = False)
 sns.heatmap(Pearson, annot = True)
 plt.show()
+
+# Analisis de la varianza de las características
+analisis = pd.read_csv('datos/airfoil_self_noise.dat', sep = '\s+', header = None)
+descripcion = analisis.describe()
