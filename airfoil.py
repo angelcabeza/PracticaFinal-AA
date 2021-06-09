@@ -65,9 +65,13 @@ print("\n¿Existen valores perdidos?: ", end='')
 print(pd.DataFrame(np.vstack([train, test])).isnull().values.any())
 
 # Analisis de la varianza de las características
-analisis = pd.read_csv('datos/airfoil_self_noise.dat', sep = '\s+', header = None)
-pd.set_option('display.max_columns', 6)
-print(analisis.describe())
+#analisis = pd.read_csv('datos/airfoil_self_noise.dat', sep = '\s+', header = None)
+#pd.set_option('display.max_columns', 6)
+#print(analisis.describe())
+
+# CON ESTA INSTRUCCIÓN SALEN LAS 5 COLUMNAS ALINEADAS BIEN
+# HE COMENTADO LA ANTERIOR INSTURCCION, TU DECIDEES SI BORRARLA O NO
+print(pd.DataFrame(data).describe().to_string())
 
 # Datos estandarizados para aquellos modelos que lo necesiten
 scaler = StandardScaler()
