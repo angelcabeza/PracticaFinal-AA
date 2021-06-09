@@ -60,6 +60,10 @@ Pearson = np.corrcoef(train, rowvar = False)
 sns.heatmap(Pearson, annot = True)
 plt.show()
 
+# Miramos si hay valores perdidos
+print("\n¿Existen valores perdidos?: ", end='')
+print(pd.DataFrame(np.vstack([train, test])).isnull().values.any())
+
 # Analisis de la varianza de las características
 analisis = pd.read_csv('datos/airfoil_self_noise.dat', sep = '\s+', header = None)
 pd.set_option('display.max_columns', 6)
