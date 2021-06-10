@@ -11,29 +11,9 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
 from sklearn.linear_model import LinearRegression
-from sklearn.metrics import mean_squared_error
 from sklearn.preprocessing import StandardScaler
-
-# Función para calcular el error de Cross Validation
-def Cross_Validation(X, Y, iteraciones, modelo):
-    tam = len(X)//iteraciones
-    Error = 0
-    
-    for i in range(iteraciones):
-        
-        x_train = np.vstack((X[0:tam*i,:],X[tam*(i+1):,:]))
-        x_test = X[tam*i:tam*(i+1),:]
-        
-        y_train = np.hstack((Y[0:tam*i],Y[tam*(i+1):]))
-        y_test = Y[tam*i:tam*(i+1)]
-        
-        modelo.fit(x_train, y_train)
-        
-        prediccion = modelo.predict(x_test)
-    
-        Error = Error + mean_squared_error(prediccion, y_test)
-        
-    return Error/iteraciones
+from sklearn.ensemble import GradientBoostingRegressor
+from sklearn.model_selection import cross_val_score
 
 # Lectura de los datos del problema
 data = np.loadtxt( 'datos/airfoil_self_noise.dat' )
@@ -65,12 +45,6 @@ print("\n¿Existen valores perdidos?: ", end='')
 print(pd.DataFrame(np.vstack([train, test])).isnull().values.any())
 
 # Analisis de la varianza de las características
-#analisis = pd.read_csv('datos/airfoil_self_noise.dat', sep = '\s+', header = None)
-#pd.set_option('display.max_columns', 6)
-#print(analisis.describe())
-
-# CON ESTA INSTRUCCIÓN SALEN LAS 5 COLUMNAS ALINEADAS BIEN
-# HE COMENTADO LA ANTERIOR INSTURCCION, TU DECIDEES SI BORRARLA O NO
 print(pd.DataFrame(data).describe().to_string())
 
 # Datos estandarizados para aquellos modelos que lo necesiten
@@ -81,4 +55,8 @@ standar_test = scaler.transform(test)
 
 # Modelo Lineal
 lineal = LinearRegression().fit(train, etiquetas_train)
-Ecv_lineal = Cross_Validation(train, etiquetas_train, 5, lineal)
+Ecv_lineal = - cross_val_score(lineal, train, etiquetas_train, scoring = 'neg_mean_squared_error').mean()
+
+# Ada-Boost
+Boost = GradientBoostingRegressor(random_state=0)
+Ecv_Boost = - cross_val_score(Boost, train, etiquetas_train, scoring = 'neg_mean_squared_error').mean()
