@@ -6,6 +6,8 @@ Created on Mon Jun  7 19:03:34 2021
 @author: Angel Cabeza y Jose Luis Oviedo 
 """
 import numpy as np
+import warnings
+
 from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -14,6 +16,9 @@ from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.model_selection import cross_val_score
+from sklearn.model_selection import GridSearchCV
+from sklearn.neural_network import MLPRegressor
+from sklearn.ensemble import RandomForestRegressor
 
 # Lectura de los datos del problema
 data = np.loadtxt( 'datos/airfoil_self_noise.dat' )
@@ -53,10 +58,40 @@ scaler.fit(train)
 standar_train = scaler.transform(train)
 standar_test = scaler.transform(test)
 
-# Modelo Lineal
-lineal = LinearRegression().fit(train, etiquetas_train)
-Ecv_lineal = - cross_val_score(lineal, train, etiquetas_train, scoring = 'neg_mean_squared_error').mean()
+# =============================================================================
+# # Modelo Lineal
+# lineal = LinearRegression().fit(train, etiquetas_train)
+# Ecv_lineal = - cross_val_score(lineal, train, etiquetas_train, scoring = 'neg_mean_squared_error').mean()
+# 
+# # Ada-Boost
+# Boost = GradientBoostingRegressor(random_state=0)
+# Ecv_Boost = - cross_val_score(Boost, train, etiquetas_train, scoring = 'neg_mean_squared_error').mean()
+# 
+# =============================================================================
+# Red neuronal
+score = 'neg_mean_squared_error'
 
-# Ada-Boost
-Boost = GradientBoostingRegressor(random_state=0)
-Ecv_Boost = - cross_val_score(Boost, train, etiquetas_train, scoring = 'neg_mean_squared_error').mean()
+#parametrosMLP = [{'hidden_layer_sizes':[50,75,100],'alpha':np.logspace(-3,1,4),'max_iter':[10000,100000,1000000]}]
+parametrosRF = [{'n_estimators':[10,100,250,500],'max_features':['auto','sqrt','log2']}]
+
+# =============================================================================
+# with warnings.catch_warnings():
+#     warnings.simplefilter("ignore")
+#     MLP = GridSearchCV(MLPRegressor(activation='logistic'),parametrosMLP,scoring=score)
+#     MLP.fit(train,etiquetas_train)
+# =============================================================================
+
+#print("Mejores parametros para MLP: ", MLP.best_params_)
+#print('CV-MSE para Perceptron Multicapa: ', -np.mean(cross_val_score(MLP,train,etiquetas_train,scoring=score)))
+
+columns_rf = ['mean_fit_time', 'param_n_estimators', 'param_max_features','mean_test_score',
+               'std_test_score', 'rank_test_score']
+
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore")
+    RF = GridSearchCV(RandomForestRegressor(random_state=1),parametrosRF,scoring=score)
+    RF.fit(train,etiquetas_train)
+    print('Cross Validation para Regresión Logística\n', pd.DataFrame(RF.cv_results_,columns=columns_rf).to_string())
+
+print("Los mejores parametros para Random Forest son: ", RF.best_params_)
+print("CV-MSE para Random Forest: ", -RF.best_score_)
