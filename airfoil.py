@@ -14,6 +14,7 @@ from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.model_selection import cross_val_score
+from sklearn.model_selection import GridSearchCV
 
 # Lectura de los datos del problema
 data = np.loadtxt( 'datos/airfoil_self_noise.dat' )
@@ -57,6 +58,18 @@ standar_test = scaler.transform(test)
 lineal = LinearRegression().fit(train, etiquetas_train)
 Ecv_lineal = - cross_val_score(lineal, train, etiquetas_train, scoring = 'neg_mean_squared_error').mean()
 
-# Ada-Boost
-Boost = GradientBoostingRegressor(random_state=0)
+# GradientBoost
+"""
+param_grid = {'learning_rate': [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1],  
+              'n_estimators': [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000], 
+              'criterion':['mse'],
+              'max_depth':[1,2,3,4,5,6,7,8,9,10]}
+
+grid = GridSearchCV(GradientBoostingRegressor(), param_grid, scoring = 'neg_mean_squared_error') 
+grid.fit(train, etiquetas_train)
+
+print(grid.best_params_) 
+"""
+Boost = GradientBoostingRegressor(criterion = 'mse', max_depth = 5, n_estimators = 1000, learning_rate = 0.2)
+
 Ecv_Boost = - cross_val_score(Boost, train, etiquetas_train, scoring = 'neg_mean_squared_error').mean()
