@@ -20,6 +20,8 @@ from sklearn.model_selection import GridSearchCV
 from sklearn.neural_network import MLPRegressor
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.svm import SVR
+from sklearn.metrics import mean_squared_error
+
 
 np.random.seed(1)
 
@@ -89,9 +91,9 @@ columns_svrKernel = ['mean_fit_time', 'param_kernel','mean_test_score',
 
 with warnings.catch_warnings():
     warnings.simplefilter("ignore")
-    #RF = GridSearchCV(RandomForestRegressor(random_state=1),parametrosRF,scoring=score)
-    #RF.fit(standar_train,etiquetas_train)
-    #print('Cross Validation para Random Forest\n', pd.DataFrame(RF.cv_results_,columns=columns_rf).to_string())
+    RF = GridSearchCV(RandomForestRegressor(random_state=1),parametrosRF,scoring=score)
+    RF.fit(standar_train,etiquetas_train)
+    print('Cross Validation para Random Forest\n', pd.DataFrame(RF.cv_results_,columns=columns_rf).to_string())
     SVRKernel = GridSearchCV(SVR(cache_size=1000),paramKernel,score)
     SVRKernel.fit(standar_train,etiquetas_train)
     print("\nCross Validation para SVM (para ver que kernel es mejor)\n: ",pd.DataFrame(SVRKernel.cv_results_,columns=columns_svrKernel).to_string())
@@ -99,11 +101,11 @@ with warnings.catch_warnings():
     SVR.fit(standar_train,etiquetas_train)
     print("\nCross Validation para SVM ajuste de parámetros C y gamma\n: ",pd.DataFrame(SVR.cv_results_,columns=columns_svr).to_string())
 
-#print("Los mejores parametros para Random Forest son: ", RF.best_params_)
-#print("CV-MSE para Random Forest: ", -RF.best_score_)
+print("\nLos mejores parametros para Random Forest son: ", RF.best_params_)
+print("CV-MSE para Random Forest: ", -RF.best_score_)
 
 print("\nLos mejores parametros para SVM son: ", SVR.best_params_)
-print("\nCV-MSE para SVC: ", -SVR.best_score_)
+print("CV-MSE para SVC: ", -SVR.best_score_)
 
 # GradientBoost
 # =============================================================================
@@ -122,3 +124,22 @@ print("\nCV-MSE para SVC: ", -SVR.best_score_)
 # 
 # Ecv_Boost = - cross_val_score(Boost, train, etiquetas_train, scoring = 'neg_mean_squared_error').mean()
 # =============================================================================
+
+
+#############################################################################
+# Calculando las cotas con la desigualdad de Hoeffding
+RFtest_pre = RF.predict(standar_test)
+etest_RF = mean_squared_error(etiquetas_test,RFtest_pre)
+
+DH_RF = etest_RF + np.sqrt((1/(2*len(standar_test))) * np.log(2/0.05))
+print("\nCota Eout desigualdad de Hoeffding para RF: ", DH_RF)
+
+SVMtest_pre = SVR.predict(standar_test)
+etest_SVM = mean_squared_error(etiquetas_test,SVMtest_pre)
+
+DH_SVM = etest_SVM + np.sqrt((1/(2*len(standar_test))) * np.log(2/0.05))
+print("Cota Eout desigualdad de Hoeffding para SVM: ", DH_SVM)
+
+#############################################################################
+# Apartado 10, gráficas para la validación de resultados
+f = plt.figure(dpi=100)
