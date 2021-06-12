@@ -12,12 +12,12 @@ from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
-from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import StandardScaler
-from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.model_selection import cross_val_score
 from sklearn.model_selection import GridSearchCV
 from sklearn.neural_network import MLPRegressor
+from sklearn.linear_model import SGDRegressor
+from sklearn.ensemble import AdaBoostRegressor
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.svm import SVR
 from sklearn.metrics import mean_squared_error
@@ -77,9 +77,17 @@ standar_test = scaler.transform(test)
 
 score = 'neg_mean_squared_error'
 
+parametrosSGDR = [{'alpha': [0, 0.0001, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9],'penalty':['l1', 'l2'],'eta0' : [0.01, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]}]
+parametrosB = [{'n_estimators': [100, 300, 500, 700, 900, 1100, 1300, 1500, 1700, 1900]}]
 parametrosRF = [{'n_estimators':[100,250,500,750,1000],'max_features':['auto','sqrt','log2']}]
 parametrosSVC = [{'C':np.logspace(-1,2,4),'gamma':[10,1,0.1,0.01]}]
 paramKernel = [{'C':[100,10,1,0.1],'kernel':['rbf','poly']}]
+
+columns_sgdr = ['mean_fit_time', 'param_alpha', 'param_penalty','param_eta0','mean_test_score',
+               'std_test_score', 'rank_test_score']
+
+columns_b = ['mean_fit_time', 'param_n_estimators','mean_test_score',
+               'std_test_score', 'rank_test_score']
 
 columns_rf = ['mean_fit_time', 'param_n_estimators', 'param_max_features','mean_test_score',
                'std_test_score', 'rank_test_score']
@@ -92,6 +100,12 @@ columns_svrKernel = ['mean_fit_time', 'param_kernel','mean_test_score',
 
 with warnings.catch_warnings():
     warnings.simplefilter("ignore")
+    SGDR = GridSearchCV(SGDRegressor(random_state=1), parametrosSGDR, scoring = score)
+    SGDR.fit(standar_train,etiquetas_train)
+    print('Cross Validation para Stocastig Gradient Descent\n', pd.DataFrame(SGDR.cv_results_,columns=columns_sgdr).to_string())
+    B = GridSearchCV(AdaBoostRegressor(random_state=1, loss = 'square'), parametrosB, scoring = score)
+    B.fit(train,etiquetas_train)
+    print('Cross Validation para AdaBoosting\n', pd.DataFrame(B.cv_results_,columns=columns_b).to_string())
     RF = GridSearchCV(RandomForestRegressor(random_state=1),parametrosRF,scoring=score)
     RF.fit(standar_train,etiquetas_train)
     print('Cross Validation para Random Forest\n', pd.DataFrame(RF.cv_results_,columns=columns_rf).to_string())
@@ -102,33 +116,32 @@ with warnings.catch_warnings():
     SVR.fit(standar_train,etiquetas_train)
     print("\nCross Validation para SVM ajuste de parámetros C y gamma\n: ",pd.DataFrame(SVR.cv_results_,columns=columns_svr).to_string())
 
+print("\nLos mejores parametros para Stocastig Gradient Descent son: ", SGDR.best_params_)
+print("CV-MSE para Stocastig Gradient Descent: ", -SGDR.best_score_)
+
+print("\nLos mejores parametros para AdaBoosting son: ", B.best_params_)
+print("CV-MSE para AdaBoosting: ", -B.best_score_)
+
 print("\nLos mejores parametros para Random Forest son: ", RF.best_params_)
 print("CV-MSE para Random Forest: ", -RF.best_score_)
 
 print("\nLos mejores parametros para SVM son: ", SVR.best_params_)
 print("CV-MSE para SVC: ", -SVR.best_score_)
 
-# GradientBoost
-# =============================================================================
-# """
-# param_grid = {'learning_rate': [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1],  
-#               'n_estimators': [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000], 
-#               'criterion':['mse'],
-#               'max_depth':[1,2,3,4,5,6,7,8,9,10]}
-# 
-# grid = GridSearchCV(GradientBoostingRegressor(), param_grid, scoring = 'neg_mean_squared_error') 
-# grid.fit(train, etiquetas_train)
-# 
-# print(grid.best_params_) 
-# """
-# Boost = GradientBoostingRegressor(criterion = 'mse', max_depth = 5, n_estimators = 1000, learning_rate = 0.2)
-# 
-# Ecv_Boost = - cross_val_score(Boost, train, etiquetas_train, scoring = 'neg_mean_squared_error').mean()
-# =============================================================================
-
-
 #############################################################################
 # Calculando las cotas con la desigualdad de Hoeffding
+SGDRtest_pre = SGDR.predict(standar_test)
+etest_SGDR = mean_squared_error(etiquetas_test,SGDRtest_pre)
+
+DH_SGDR = etest_SGDR + np.sqrt((1/(2*len(standar_test))) * np.log(2/0.05))
+print("\nCota Eout desigualdad de Hoeffding para RF: ", DH_SGDR)
+
+Btest_pre = B.predict(test)
+etest_B = mean_squared_error(etiquetas_test,Btest_pre)
+
+DH_B = etest_B + np.sqrt((1/(2*len(test))) * np.log(2/0.05))
+print("\nCota Eout desigualdad de Hoeffding para RF: ", DH_B)
+
 RFtest_pre = RF.predict(standar_test)
 etest_RF = mean_squared_error(etiquetas_test,RFtest_pre)
 
@@ -143,6 +156,24 @@ print("Cota Eout desigualdad de Hoeffding para SVM: ", DH_SVM)
 
 #############################################################################
 # Apartado 10, gráficas para la validación de resultados
+plt.scatter(etiquetas_test, SGDRtest_pre)
+plt.plot(etiquetas_test, etiquetas_test,label="Perfect Predictor",color='r')
+plt.legend()
+plt.title("Perfect predictor vs Our Stocasting Gradient Descent Predictor")
+plt.xlabel("True SPL")
+plt.ylabel("Predicteed SPL")
+
+plt.show()
+
+plt.scatter(etiquetas_test, Btest_pre)
+plt.plot(etiquetas_test, etiquetas_test,label="Perfect Predictor",color='r')
+plt.legend()
+plt.title("Perfect predictor vs Our AdaBoosting Predictor")
+plt.xlabel("True SPL")
+plt.ylabel("Predicteed SPL")
+
+plt.show()
+
 plt.scatter(etiquetas_test, RFtest_pre)
 plt.plot(etiquetas_test, etiquetas_test,label="Perfect Predictor",color='r')
 plt.legend()
@@ -160,3 +191,7 @@ plt.xlabel("True SPL")
 plt.ylabel("Predicteed SPL")
 
 plt.show()
+
+
+# =============================================================================
+# Red neuronal
