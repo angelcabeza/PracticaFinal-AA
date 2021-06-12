@@ -21,6 +21,7 @@ from sklearn.neural_network import MLPRegressor
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.svm import SVR
 from sklearn.metrics import mean_squared_error
+from sklearn.model_selection import learning_curve
 
 
 np.random.seed(1)
@@ -142,4 +143,20 @@ print("Cota Eout desigualdad de Hoeffding para SVM: ", DH_SVM)
 
 #############################################################################
 # Apartado 10, gráficas para la validación de resultados
-f = plt.figure(dpi=100)
+plt.scatter(etiquetas_test, RFtest_pre)
+plt.plot(etiquetas_test, etiquetas_test,label="Perfect Predictor",color='r')
+plt.legend()
+plt.title("Perfect predictor vs Our RandomForest Predictor")
+plt.xlabel("True SPL")
+plt.ylabel("Predicteed SPL")
+
+plt.show()
+
+plt.scatter(etiquetas_test, SVMtest_pre)
+plt.plot(etiquetas_test, etiquetas_test,label="Perfect Predictor",color='r')
+plt.legend()
+plt.title("Perfect predictor vs Our SVM Predictor")
+plt.xlabel("True SPL")
+plt.ylabel("Predicteed SPL")
+
+plt.show()
