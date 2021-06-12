@@ -19,7 +19,9 @@ from sklearn.model_selection import cross_val_score
 from sklearn.model_selection import GridSearchCV
 from sklearn.neural_network import MLPRegressor
 from sklearn.ensemble import RandomForestRegressor
+from sklearn.svm import SVR
 
+np.random.seed(1)
 
 # Lectura de los datos del problema
 data = np.loadtxt( 'datos/airfoil_self_noise.dat' )
@@ -69,47 +71,54 @@ standar_test = scaler.transform(test)
 # Ecv_Boost = - cross_val_score(Boost, train, etiquetas_train, scoring = 'neg_mean_squared_error').mean()
 # 
 # =============================================================================
-# Red neuronal
+
 score = 'neg_mean_squared_error'
 
-#parametrosMLP = [{'hidden_layer_sizes':[50,75,100],'alpha':np.logspace(-3,1,4),'max_iter':[10000,100000,1000000]}]
-parametrosRF = [{'n_estimators':[10,100,250,500],'max_features':['auto','sqrt','log2']}]
-
-# =============================================================================
-# with warnings.catch_warnings():
-#     warnings.simplefilter("ignore")
-#     MLP = GridSearchCV(MLPRegressor(activation='logistic'),parametrosMLP,scoring=score)
-#     MLP.fit(train,etiquetas_train)
-# =============================================================================
-
-#print("Mejores parametros para MLP: ", MLP.best_params_)
-#print('CV-MSE para Perceptron Multicapa: ', -np.mean(cross_val_score(MLP,train,etiquetas_train,scoring=score)))
+parametrosRF = [{'n_estimators':[100,250,500,750,1000],'max_features':['auto','sqrt','log2']}]
+parametrosSVC = [{'C':np.logspace(-1,2,4),'gamma':[10,1,0.1,0.01]}]
+paramKernel = [{'C':[100,10,1,0.1],'kernel':['rbf','poly']}]
 
 columns_rf = ['mean_fit_time', 'param_n_estimators', 'param_max_features','mean_test_score',
                'std_test_score', 'rank_test_score']
 
+columns_svr = ['mean_fit_time', 'param_C', 'param_gamma','mean_test_score',
+               'std_test_score', 'rank_test_score']
+
+columns_svrKernel = ['mean_fit_time', 'param_kernel','mean_test_score',
+               'std_test_score', 'rank_test_score']
+
 with warnings.catch_warnings():
     warnings.simplefilter("ignore")
-    RF = GridSearchCV(RandomForestRegressor(random_state=1),parametrosRF,scoring=score)
-    RF.fit(train,etiquetas_train)
-    print('Cross Validation para Regresión Logística\n', pd.DataFrame(RF.cv_results_,columns=columns_rf).to_string())
+    #RF = GridSearchCV(RandomForestRegressor(random_state=1),parametrosRF,scoring=score)
+    #RF.fit(standar_train,etiquetas_train)
+    #print('Cross Validation para Random Forest\n', pd.DataFrame(RF.cv_results_,columns=columns_rf).to_string())
+    SVRKernel = GridSearchCV(SVR(cache_size=1000),paramKernel,score)
+    SVRKernel.fit(standar_train,etiquetas_train)
+    print("\nCross Validation para SVM (para ver que kernel es mejor)\n: ",pd.DataFrame(SVRKernel.cv_results_,columns=columns_svrKernel).to_string())
+    SVR = GridSearchCV(SVR(cache_size=1000),parametrosSVC,score)
+    SVR.fit(standar_train,etiquetas_train)
+    print("\nCross Validation para SVM ajuste de parámetros C y gamma\n: ",pd.DataFrame(SVR.cv_results_,columns=columns_svr).to_string())
 
+#print("Los mejores parametros para Random Forest son: ", RF.best_params_)
+#print("CV-MSE para Random Forest: ", -RF.best_score_)
 
-print("Los mejores parametros para Random Forest son: ", RF.best_params_)
-print("CV-MSE para Random Forest: ", -RF.best_score_)
+print("\nLos mejores parametros para SVM son: ", SVR.best_params_)
+print("\nCV-MSE para SVC: ", -SVR.best_score_)
 
 # GradientBoost
-"""
-param_grid = {'learning_rate': [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1],  
-              'n_estimators': [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000], 
-              'criterion':['mse'],
-              'max_depth':[1,2,3,4,5,6,7,8,9,10]}
-
-grid = GridSearchCV(GradientBoostingRegressor(), param_grid, scoring = 'neg_mean_squared_error') 
-grid.fit(train, etiquetas_train)
-
-print(grid.best_params_) 
-"""
-Boost = GradientBoostingRegressor(criterion = 'mse', max_depth = 5, n_estimators = 1000, learning_rate = 0.2)
-
-Ecv_Boost = - cross_val_score(Boost, train, etiquetas_train, scoring = 'neg_mean_squared_error').mean()
+# =============================================================================
+# """
+# param_grid = {'learning_rate': [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1],  
+#               'n_estimators': [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000], 
+#               'criterion':['mse'],
+#               'max_depth':[1,2,3,4,5,6,7,8,9,10]}
+# 
+# grid = GridSearchCV(GradientBoostingRegressor(), param_grid, scoring = 'neg_mean_squared_error') 
+# grid.fit(train, etiquetas_train)
+# 
+# print(grid.best_params_) 
+# """
+# Boost = GradientBoostingRegressor(criterion = 'mse', max_depth = 5, n_estimators = 1000, learning_rate = 0.2)
+# 
+# Ecv_Boost = - cross_val_score(Boost, train, etiquetas_train, scoring = 'neg_mean_squared_error').mean()
+# =============================================================================
