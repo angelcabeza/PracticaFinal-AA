@@ -22,7 +22,7 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.svm import SVR
 from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import learning_curve
-
+from sklearn.metrics import r2_score
 
 np.random.seed(1)
 
@@ -136,6 +136,8 @@ etest_SGDR = mean_squared_error(etiquetas_test,SGDRtest_pre)
 DH_SGDR = etest_SGDR + np.sqrt((1/(2*len(standar_test))) * np.log(2/0.05))
 print("\nValor de error Etest para SGD: ", etest_SGDR)
 print("Cota Eout desigualdad de Hoeffding para SGD: ", DH_SGDR)
+print("Valor de error R2 para SGD: ", r2_score(etiquetas_test,SGDRtest_pre))
+print("Valor de error RMSE para SGD: ", mean_squared_error(etiquetas_test,SGDRtest_pre, squared = False))
 
 Btest_pre = B.predict(test)
 etest_B = mean_squared_error(etiquetas_test,Btest_pre)
@@ -143,6 +145,8 @@ etest_B = mean_squared_error(etiquetas_test,Btest_pre)
 DH_B = etest_B + np.sqrt((1/(2*len(test))) * np.log(2/0.05))
 print("\nValor de error Etest para AdaBoost: ", etest_B)
 print("Cota Eout desigualdad de Hoeffding para AdaBoost: ", DH_B)
+print("Valor de error R2 para B: ", r2_score(etiquetas_test,Btest_pre))
+print("Valor de error RMSE para B: ", mean_squared_error(etiquetas_test,Btest_pre, squared = False))
 
 RFtest_pre = RF.predict(standar_test)
 etest_RF = mean_squared_error(etiquetas_test,RFtest_pre)
@@ -150,6 +154,8 @@ etest_RF = mean_squared_error(etiquetas_test,RFtest_pre)
 DH_RF = etest_RF + np.sqrt((1/(2*len(standar_test))) * np.log(2/0.05))
 print("\nValor de error Etest para RF: ", etest_RF)
 print("Cota Eout desigualdad de Hoeffding para RF: ", DH_RF)
+print("Valor de error R2 para RF: ", r2_score(etiquetas_test,RFtest_pre))
+print("Valor de error RMSE para RF: ", mean_squared_error(etiquetas_test,RFtest_pre, squared = False))
 
 SVMtest_pre = SVR.predict(standar_test)
 etest_SVM = mean_squared_error(etiquetas_test,SVMtest_pre)
@@ -157,6 +163,8 @@ etest_SVM = mean_squared_error(etiquetas_test,SVMtest_pre)
 DH_SVM = etest_SVM + np.sqrt((1/(2*len(standar_test))) * np.log(2/0.05))
 print("\nValor de error Etest para SVM: ", etest_SVM)
 print("Cota Eout desigualdad de Hoeffding para SVM: ", DH_SVM)
+print("Valor de error R2 para SVM: ", r2_score(etiquetas_test,SVMtest_pre))
+print("Valor de error RMSE para SVM: ", mean_squared_error(etiquetas_test,SVMtest_pre, squared = False))
 
 #############################################################################
 # Apartado 10, gráficas para la validación de resultados
@@ -195,3 +203,11 @@ plt.xlabel("True SPL")
 plt.ylabel("Predicteed SPL")
 
 plt.show()
+
+#############################################################################
+# Apartado 11, Métrica de error R2
+R2_SGDR = r2_score(etiquetas_test,SGDRtest_pre)
+R2_B = r2_score(etiquetas_test,Btest_pre)
+R2_RF = r2_score(etiquetas_test,RFtest_pre)
+R2_SVM = r2_score(etiquetas_test,SVMtest_pre)
+
