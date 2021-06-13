@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Mon Jun  7 19:03:34 2021
 
 @author: Angel Cabeza y Jose Luis Oviedo 
 """
@@ -13,24 +12,31 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
-from sklearn.model_selection import cross_val_score
 from sklearn.model_selection import GridSearchCV
-from sklearn.neural_network import MLPRegressor
 from sklearn.linear_model import SGDRegressor
 from sklearn.ensemble import AdaBoostRegressor
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.svm import SVR
 from sklearn.metrics import mean_squared_error
-from sklearn.model_selection import learning_curve
 from sklearn.metrics import r2_score
 
 np.random.seed(1)
 
+#############################################################################
+# Lectura y preparación de los datos
+
+print ("Leyendo los datos...")
 # Lectura de los datos del problema
 data = np.loadtxt( 'datos/airfoil_self_noise.dat' )
 
+print ("Lectura realizada con exito!")
+
+input("\n--- Pulsar tecla para continuar ---\n")
+
 # División del conjunto inicial en dos subconjuntos train y test
 # con train el 80% de los datos y test con el 20%.
+
+print ("Vamos a dividir el dataset en train (80%) y test (20%)")
 train, test = train_test_split(data, test_size = 0.20, random_state = 123)
 
 # Separación de las etiquetas con los datos.
@@ -40,41 +46,57 @@ etiquetas_test = test[:,len(test[0])-1]
 train = np.delete(train, -1, axis=1)
 test = np.delete(test, -1, axis=1)
 
+print("División realizada correctamente")
+
+input("\n--- Pulsar tecla para continuar ---\n")
+#############################################################################
+# PREPROCESADO DE DATOS
+
 # Comprobación de que todas las características utilizan el mismo tipo de datos
 print('Columna                   Tipo de dato')
 print('--------------------------------------------')
 for i in range(5):
     print(i, '                  ', type(train[0][i]))
-   
+
+input("\n--- Pulsar tecla para continuar ---\n")
+
+print ("Correlacion de pearson para cada caracteristica")
 # Analisis de la correlacion de Pearson
 Pearson = np.corrcoef(train, rowvar = False)
 sns.heatmap(Pearson, annot = True)
 plt.show()
 
+input("\n--- Pulsar tecla para continuar ---\n")
+
 # Miramos si hay valores perdidos
 print("\n¿Existen valores perdidos?: ", end='')
 print(pd.DataFrame(np.vstack([train, test])).isnull().values.any())
 
+input("\n--- Pulsar tecla para continuar ---\n")
+
 # Analisis de la varianza de las características
+print("Analisis de la varianza de las características")
 print(pd.DataFrame(data).describe().to_string())
 
+input("\n--- Pulsar tecla para continuar ---\n")
+
 # Datos estandarizados para aquellos modelos que lo necesiten
+print ("Estandarizando los datos...")
 scaler = StandardScaler()
 scaler.fit(train)
 standar_train = scaler.transform(train)
 standar_test = scaler.transform(test)
 
-# =============================================================================
-# # Modelo Lineal
-# lineal = LinearRegression().fit(train, etiquetas_train)
-# Ecv_lineal = - cross_val_score(lineal, train, etiquetas_train, scoring = 'neg_mean_squared_error').mean()
-# 
-# # Ada-Boost
-# Boost = GradientBoostingRegressor(random_state=0)
-# Ecv_Boost = - cross_val_score(Boost, train, etiquetas_train, scoring = 'neg_mean_squared_error').mean()
-# 
-# =============================================================================
+print("Estandarizacion realizada")
 
+input("\n--- Pulsar tecla para continuar ---\n")
+
+#############################################################################
+
+#############################################################################
+# Grid de parámetros para los 4 algoritmos usados
+
+print("Ajustando los modelos esto podria tardar unos instantes...")
 score = 'neg_mean_squared_error'
 
 parametrosSGDR = [{'alpha': [0, 0.0001, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9],'penalty':['l1', 'l2'],'eta0' : [0.01, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]}]
@@ -116,6 +138,8 @@ with warnings.catch_warnings():
     SVR.fit(standar_train,etiquetas_train)
     print("\nCross Validation para SVM ajuste de parámetros C y gamma\n: ",pd.DataFrame(SVR.cv_results_,columns=columns_svr).to_string())
 
+input("\n--- Pulsar tecla para continuar ---\n")
+
 print("\nLos mejores parametros para Stocastig Gradient Descent son: ", SGDR.best_params_)
 print("CV-MSE para Stocastig Gradient Descent: ", -SGDR.best_score_)
 
@@ -128,8 +152,12 @@ print("CV-MSE para Random Forest: ", -RF.best_score_)
 print("\nLos mejores parametros para SVM son: ", SVR.best_params_)
 print("CV-MSE para SVC: ", -SVR.best_score_)
 
+input("\n--- Pulsar tecla para continuar ---\n")
+
 #############################################################################
 # Calculando las cotas con la desigualdad de Hoeffding
+print("Desigualdades de Hoeffding para cada algoritmo y error RMSE Y R2:\n")
+
 SGDRtest_pre = SGDR.predict(standar_test)
 etest_SGDR = mean_squared_error(etiquetas_test,SGDRtest_pre)
 
@@ -166,14 +194,19 @@ print("Cota Eout desigualdad de Hoeffding para SVM: ", DH_SVM)
 print("Valor de error R2 para SVM: ", r2_score(etiquetas_test,SVMtest_pre))
 print("Valor de error RMSE para SVM: ", mean_squared_error(etiquetas_test,SVMtest_pre, squared = False))
 
+input("\n--- Pulsar tecla para continuar ---\n")
+
 #############################################################################
 # Apartado 10, gráficas para la validación de resultados
+
+print ("Demostracion grafica de la precision de nuestros modelos")
+
 plt.scatter(etiquetas_test, SGDRtest_pre)
 plt.plot(etiquetas_test, etiquetas_test,label="Perfect Predictor",color='r')
 plt.legend()
 plt.title("Perfect predictor vs Our Stocasting Gradient Descent Predictor")
 plt.xlabel("True SPL")
-plt.ylabel("Predicteed SPL")
+plt.ylabel("Predicted SPL")
 
 plt.show()
 
@@ -182,7 +215,7 @@ plt.plot(etiquetas_test, etiquetas_test,label="Perfect Predictor",color='r')
 plt.legend()
 plt.title("Perfect predictor vs Our AdaBoost Predictor")
 plt.xlabel("True SPL")
-plt.ylabel("Predicteed SPL")
+plt.ylabel("Predicted SPL")
 
 plt.show()
 
@@ -191,7 +224,7 @@ plt.plot(etiquetas_test, etiquetas_test,label="Perfect Predictor",color='r')
 plt.legend()
 plt.title("Perfect predictor vs Our RandomForest Predictor")
 plt.xlabel("True SPL")
-plt.ylabel("Predicteed SPL")
+plt.ylabel("Predicted SPL")
 
 plt.show()
 
@@ -200,9 +233,11 @@ plt.plot(etiquetas_test, etiquetas_test,label="Perfect Predictor",color='r')
 plt.legend()
 plt.title("Perfect predictor vs Our SVM Predictor")
 plt.xlabel("True SPL")
-plt.ylabel("Predicteed SPL")
+plt.ylabel("Predicted SPL")
 
 plt.show()
+
+input("\n--- Pulsar tecla para continuar ---\n")
 
 #############################################################################
 # Apartado 11, Métrica de error R2
