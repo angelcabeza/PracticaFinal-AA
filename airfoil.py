@@ -237,12 +237,4 @@ plt.ylabel("Predicted SPL")
 
 plt.show()
 
-input("\n--- Pulsar tecla para continuar ---\n")
-
 #############################################################################
-# Apartado 11, Métrica de error R2
-R2_SGDR = r2_score(etiquetas_test,SGDRtest_pre)
-R2_B = r2_score(etiquetas_test,Btest_pre)
-R2_RF = r2_score(etiquetas_test,RFtest_pre)
-R2_SVM = r2_score(etiquetas_test,SVMtest_pre)
-
