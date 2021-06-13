@@ -78,7 +78,7 @@ standar_test = scaler.transform(test)
 score = 'neg_mean_squared_error'
 
 parametrosSGDR = [{'alpha': [0, 0.0001, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9],'penalty':['l1', 'l2'],'eta0' : [0.01, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]}]
-parametrosB = [{'n_estimators': [100, 300, 500, 700, 900, 1100, 1300, 1500, 1700, 1900]}]
+parametrosB = [{'n_estimators': [50, 100, 300, 500]}]
 parametrosRF = [{'n_estimators':[100,250,500,750,1000],'max_features':['auto','sqrt','log2']}]
 parametrosSVC = [{'C':np.logspace(-1,2,4),'gamma':[10,1,0.1,0.01]}]
 paramKernel = [{'C':[100,10,1,0.1],'kernel':['rbf','poly']}]
@@ -102,13 +102,13 @@ with warnings.catch_warnings():
     warnings.simplefilter("ignore")
     SGDR = GridSearchCV(SGDRegressor(random_state=1), parametrosSGDR, scoring = score)
     SGDR.fit(standar_train,etiquetas_train)
-    print('Cross Validation para Stocastig Gradient Descent\n', pd.DataFrame(SGDR.cv_results_,columns=columns_sgdr).to_string())
+    print('\nCross Validation para Stocastig Gradient Descent\n', pd.DataFrame(SGDR.cv_results_,columns=columns_sgdr).to_string())
     B = GridSearchCV(AdaBoostRegressor(random_state=1, loss = 'square'), parametrosB, scoring = score)
     B.fit(train,etiquetas_train)
-    print('Cross Validation para AdaBoosting\n', pd.DataFrame(B.cv_results_,columns=columns_b).to_string())
+    print('\nCross Validation para AdaBoost\n', pd.DataFrame(B.cv_results_,columns=columns_b).to_string())
     RF = GridSearchCV(RandomForestRegressor(random_state=1),parametrosRF,scoring=score)
     RF.fit(standar_train,etiquetas_train)
-    print('Cross Validation para Random Forest\n', pd.DataFrame(RF.cv_results_,columns=columns_rf).to_string())
+    print('\nCross Validation para Random Forest\n', pd.DataFrame(RF.cv_results_,columns=columns_rf).to_string())
     SVRKernel = GridSearchCV(SVR(cache_size=1000),paramKernel,score)
     SVRKernel.fit(standar_train,etiquetas_train)
     print("\nCross Validation para SVM (para ver que kernel es mejor)\n: ",pd.DataFrame(SVRKernel.cv_results_,columns=columns_svrKernel).to_string())
@@ -119,8 +119,8 @@ with warnings.catch_warnings():
 print("\nLos mejores parametros para Stocastig Gradient Descent son: ", SGDR.best_params_)
 print("CV-MSE para Stocastig Gradient Descent: ", -SGDR.best_score_)
 
-print("\nLos mejores parametros para AdaBoosting son: ", B.best_params_)
-print("CV-MSE para AdaBoosting: ", -B.best_score_)
+print("\nLos mejores parametros para AdaBoost son: ", B.best_params_)
+print("CV-MSE para AdaBoost: ", -B.best_score_)
 
 print("\nLos mejores parametros para Random Forest son: ", RF.best_params_)
 print("CV-MSE para Random Forest: ", -RF.best_score_)
@@ -134,24 +134,28 @@ SGDRtest_pre = SGDR.predict(standar_test)
 etest_SGDR = mean_squared_error(etiquetas_test,SGDRtest_pre)
 
 DH_SGDR = etest_SGDR + np.sqrt((1/(2*len(standar_test))) * np.log(2/0.05))
-print("\nCota Eout desigualdad de Hoeffding para RF: ", DH_SGDR)
+print("\nValor de error Etest para SGD: ", etest_SGDR)
+print("Cota Eout desigualdad de Hoeffding para SGD: ", DH_SGDR)
 
 Btest_pre = B.predict(test)
 etest_B = mean_squared_error(etiquetas_test,Btest_pre)
 
 DH_B = etest_B + np.sqrt((1/(2*len(test))) * np.log(2/0.05))
-print("\nCota Eout desigualdad de Hoeffding para RF: ", DH_B)
+print("\nValor de error Etest para AdaBoost: ", etest_B)
+print("Cota Eout desigualdad de Hoeffding para AdaBoost: ", DH_B)
 
 RFtest_pre = RF.predict(standar_test)
 etest_RF = mean_squared_error(etiquetas_test,RFtest_pre)
 
 DH_RF = etest_RF + np.sqrt((1/(2*len(standar_test))) * np.log(2/0.05))
-print("\nCota Eout desigualdad de Hoeffding para RF: ", DH_RF)
+print("\nValor de error Etest para RF: ", etest_RF)
+print("Cota Eout desigualdad de Hoeffding para RF: ", DH_RF)
 
 SVMtest_pre = SVR.predict(standar_test)
 etest_SVM = mean_squared_error(etiquetas_test,SVMtest_pre)
 
 DH_SVM = etest_SVM + np.sqrt((1/(2*len(standar_test))) * np.log(2/0.05))
+print("\nValor de error Etest para SVM: ", etest_SVM)
 print("Cota Eout desigualdad de Hoeffding para SVM: ", DH_SVM)
 
 #############################################################################
@@ -168,7 +172,7 @@ plt.show()
 plt.scatter(etiquetas_test, Btest_pre)
 plt.plot(etiquetas_test, etiquetas_test,label="Perfect Predictor",color='r')
 plt.legend()
-plt.title("Perfect predictor vs Our AdaBoosting Predictor")
+plt.title("Perfect predictor vs Our AdaBoost Predictor")
 plt.xlabel("True SPL")
 plt.ylabel("Predicteed SPL")
 
@@ -191,7 +195,3 @@ plt.xlabel("True SPL")
 plt.ylabel("Predicteed SPL")
 
 plt.show()
-
-
-# =============================================================================
-# Red neuronal
